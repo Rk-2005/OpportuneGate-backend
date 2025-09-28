@@ -27,6 +27,7 @@ const server = createServer(app);
 // ✅ CORS config (one place only)
 const allowedOrigins = [
   "https://opportune-gate.vercel.app",
+  "https://opportunegate-backend.onrender.com",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:4173"
