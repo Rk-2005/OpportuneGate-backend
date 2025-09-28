@@ -1,0 +1,258 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+  COMPANY
+}
+
+enum ApplicationStatus {
+  APPLIED
+  CUSTOM_ROUND
+  PLACED
+  NOT_PLACED
+  REJECTED
+}
+
+enum OpportunityType {
+  INTERNSHIP
+  FULL_TIME
+  CONTEST
+  HACKATHON
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profile      Profile?
+  college      College? @relation("CollegeAdmin")
+  students     Student[] @relation("CollegeStudents")
+  company      Company?
+  applications Application[]
+  notifications Notification[]
+  groups       Group[] @relation("GroupAdmin")
+  groupMemberships GroupMember[]
+  groupMessages GroupMessage[]
+
+  @@map("users")
+}
+
+model Profile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  firstName    String
+  lastName     String
+  phone        String?
+  sscPercent   Float?
+  hscPercent   Float?
+  cgpa         Float?
+  currentYear  Int?
+  resume       String?
+  documents    String[] // Array of file paths
+  isPlaced     Boolean @default(false)
+  placedAt     String? // Company name where placed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model College {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  address     String
+  city        String
+  state       String
+  pincode     String
+  website     String?
+  adminId     String   @unique
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  admin       User     @relation("CollegeAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  students    Student[] @relation("CollegeStudents")
+  opportunities Opportunity[]
+  groups      Group[]
+
+  @@map("colleges")
+}
+
+model Student {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  collegeId String
+  rollNo    String
+  branch    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation("CollegeStudents", fields: [userId], references: [id], onDelete: Cascade)
+  college   College  @relation("CollegeStudents", fields: [collegeId], references: [id], onDelete: Cascade)
+
+  @@unique([collegeId, rollNo])
+  @@map("students")
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  name        String
+  website     String?
+  industry    String?
+  size        String?
+  description String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+
+  @@map("companies")
+}
+
+model Opportunity {
+  id              String          @id @default(cuid())
+  title           String
+  description     String
+  type            OpportunityType
+  companyId       String?
+  collegeId       String?
+  groupId         String?
+  postedBy        String // User ID who posted
+  eligibility     Json // Flexible eligibility criteria
+  requirements    String[]
+  benefits        String[]
+  location        String
+  salary          String?
+  duration        String? // For internships
+  applicationDeadline DateTime
+  rounds          Json? // Custom rounds/stages for this opportunity
+  isActive        Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  company         Company?        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  college         College?        @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  group           Group?          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  applications    Application[]
+  notifications   Notification[]
+
+  @@map("opportunities")
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  studentId     String
+  opportunityId String
+  status        ApplicationStatus @default(APPLIED)
+  currentRound  String? // Current round/stage name
+  appliedAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  notes         String?
+  interviewDate DateTime?
+  interviewTime String?
+
+  // Relations
+  student       User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, opportunityId])
+  @@map("applications")
+}
+
+model Group {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  inviteCode    String   @unique
+  isActive      Boolean  @default(true)
+  adminId       String
+  collegeId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  admin         User           @relation("GroupAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  college       College?       @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  members       GroupMember[]
+  opportunities Opportunity[]
+  messages      GroupMessage[]
+  notifications Notification[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  joinedAt  DateTime @default(now())
+  isActive  Boolean  @default(true)
+
+  // Relations
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model GroupMessage {
+  id        String   @id @default(cuid())
+  groupId   String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("group_messages")
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  userId        String
+  opportunityId String?
+  groupId       String?
+  title         String
+  message       String
+  type          String   // "opportunity", "interview", "status_update", "group_invite", etc.
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  group         Group?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
