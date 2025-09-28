@@ -100,18 +100,18 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/opportunities', opportunityRoutes);
-app.use('/api/applications', applicationRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/company', companyRoutes);
-app.use('/api/groups', groupRoutes);
-app.use('/api/groups', groupMessageRoutes);
+app.use('/auth', authRoutes);
+app.use('/profile', profileRoutes);
+app.use('/opportunities', opportunityRoutes);
+app.use('/applications', applicationRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/admin', adminRoutes);
+app.use('/company', companyRoutes);
+app.use('/groups', groupRoutes);
+app.use('/groups', groupMessageRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 

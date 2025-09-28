@@ -27,6 +27,7 @@ const server = (0, http_1.createServer)(app);
 // ✅ CORS config (one place only)
 const allowedOrigins = [
     "https://opportune-gate.vercel.app",
+    "https://opportunegate-backend.onrender.com",
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:4173"
@@ -70,6 +71,9 @@ app.use((req, res, next) => {
         next();
     }
 });
+app.get("/", (req, res) => {
+    return res.send("hi");
+});
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true }));
 // Socket.IO connection handling
@@ -86,17 +90,17 @@ io.on('connection', (socket) => {
 // Make io available to routes
 app.set('io', io);
 // Routes
-app.use('/api/auth', auth_1.default);
-app.use('/api/profile', profile_1.default);
-app.use('/api/opportunities', opportunity_1.default);
-app.use('/api/applications', application_1.default);
-app.use('/api/notifications', notification_1.default);
-app.use('/api/admin', admin_1.default);
-app.use('/api/company', company_1.default);
-app.use('/api/groups', groups_1.default);
-app.use('/api/groups', groupMessages_1.default);
+app.use('/auth', auth_1.default);
+app.use('/profile', profile_1.default);
+app.use('/opportunities', opportunity_1.default);
+app.use('/applications', application_1.default);
+app.use('/notifications', notification_1.default);
+app.use('/admin', admin_1.default);
+app.use('/company', company_1.default);
+app.use('/groups', groups_1.default);
+app.use('/groups', groupMessages_1.default);
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 // Error handling middleware
